@@ -2,10 +2,10 @@ import numpy as np
 import threading
 import time
 
-from unitree_dds_wrapper.idl import unitree_hg
-from unitree_dds_wrapper.publisher import Publisher
-from unitree_dds_wrapper.subscription import Subscription
-from unitree_dds_wrapper.utils.crc import crc32
+from unitree_sdk2py.idl import unitree_go as unitree_hg
+from unitree_sdk2py.core.channel import ChannelPublisher, ChannelSubscriber
+from unitree_sdk2py.utils.crc import CRC as crc32
+from unitree_sdk2py.idl.default import unitree_go_msg_dds__LowCmd_
 
 import struct
 from enum import IntEnum
@@ -55,12 +55,17 @@ class H1ArmController:
         print("Initialize H1ArmController...")
         self.q_desList = np.zeros(kNumMotors)
         self.q_tau_ff = np.zeros(kNumMotors)
-        self.msg =  unitree_hg.msg.dds_.LowCmd_()
+        self.msg = unitree_go_msg_dds__LowCmd_()
+        self.crc = crc32()
+        self.msg.mode_pr = 0
+        self.msg.mode_machine = 4
         self.__packFmtHGLowCmd = '<2B2x' + 'B3x5fI' * 35 + '5I'
 
         self.msg.head = [0xFE, 0xEF]
-        self.lowcmd_publisher = Publisher(unitree_hg.msg.dds_.LowCmd_, kTopicLowCommand)
-        self.lowstate_subscriber = Subscription(unitree_hg.msg.dds_.LowState_, kTopicLowState)
+        self.lowcmd_publisher = ChannelPublisher(kTopicLowCommand, unitree_hg.msg.dds_.LowCmd_)
+        self.lowcmd_publisher.Init()
+        self.lowstate_subscriber= ChannelSubscriber(kTopicLowState, unitree_hg.msg.dds_.LowState_)
+        self.lowstate_subscriber.Init()
 
         self.motor_state_buffer = DataBuffer()
         self.motor_command_buffer = DataBuffer()
@@ -85,16 +90,23 @@ class H1ArmController:
         self.report_dt = 0.1
         self.ratio = 0.0
         self.q_target = []
-        while not self.lowstate_subscriber.msg:
-            print("lowstate_subscriber is not ok! Please check dds.")
+        while True:
+            msg = self.lowstate_subscriber.Read()
+            if msg is None:
+                print("lowstate_subscriber is not ok! Please check dds.")
+            else:
+                break
             time.sleep(0.01)
         
         for id in JointIndex:
-            self.msg.motor_cmd[id].q = self.lowstate_subscriber.msg.motor_state[id].q
-            self.q_target.append(self.msg.motor_cmd[id].q)
+            msg = self.lowstate_subscriber.Read()
+            if msg:
+                self.msg.motor_cmd[id].q = msg.motor_state[id].q
+                self.q_target.append(self.msg.motor_cmd[id].q)
         print(f"Init q_pose is :{self.q_target}")
         duration = 1000
-        init_q = np.array([self.lowstate_subscriber.msg.motor_state[id].q for id in JointIndex])
+        msg = self.lowstate_subscriber.Read()
+        init_q = np.array([msg.motor_state[id].q for id in JointIndex])
         print("Lock Leg...")
         for i in range(duration):
             time.sleep(0.001)
@@ -106,8 +118,7 @@ class H1ArmController:
                     self.msg.motor_cmd[id].kd = 5
                     self.msg.motor_cmd[id].q = q_t[i]
             self.pre_communication()
-            self.lowcmd_publisher.msg = self.msg
-            self.lowcmd_publisher.write()
+            self.lowcmd_publisher.Write(self.msg)
         print("Lock Leg OK!")
 
         self.report_rpy_thread = threading.Thread(target=self.SubscribeState)
@@ -166,24 +177,27 @@ class H1ArmController:
         self.__pack_crc()
 
     def __pack_crc(self):
-        origData = []
-        origData.append(self.msg.mode_pr)
-        origData.append(self.msg.mode_machine)
+        # @FIXME この実装であっているかはわからない
+        # origData = []
+        # origData.append(self.msg.mode_pr)
+        # origData.append(self.msg.mode_machine)
 
         for i in range(kNumMotors):
-            origData.append(self.msg.motor_cmd[i].mode)
-            origData.append(self.msg.motor_cmd[i].q)
-            origData.append(self.msg.motor_cmd[i].dq)
-            origData.append(self.msg.motor_cmd[i].tau)
-            origData.append(self.msg.motor_cmd[i].kp)
-            origData.append(self.msg.motor_cmd[i].kd)
-            origData.append(self.msg.motor_cmd[i].reserve)
+            # origData.append(self.msg.motor_cmd[i].mode)
+            # origData.append(self.msg.motor_cmd[i].q)
+            # origData.append(self.msg.motor_cmd[i].dq)
+            # origData.append(self.msg.motor_cmd[i].tau)
+            # origData.append(self.msg.motor_cmd[i].kp)
+            # origData.append(self.msg.motor_cmd[i].kd)
+            # origData.append(self.msg.motor_cmd[i].reserve)
+            self.msg.motor_cmd[i].mode = 0x01
 
-        origData.extend(self.msg.reserve)
-        origData.append(self.msg.crc)
-        calcdata = struct.pack(self.__packFmtHGLowCmd, *origData)
-        calcdata =  self.__Trans(calcdata)
-        self.msg.crc = self.__Crc32(calcdata)
+        # origData.extend(self.msg.reserve)
+        # origData.append(self.msg.crc)
+        # calcdata = struct.pack(self.__packFmtHGLowCmd, *origData)
+        # calcdata =  self.__Trans(calcdata)
+        # self.msg.crc = self.__Crc32(calcdata)
+        self.msg.crc = self.crc.Crc(self.msg)
 
     def LowCommandWriter(self):
         while True:
@@ -196,8 +210,7 @@ class H1ArmController:
                     self.msg.motor_cmd[i].kp = mc_tmp_ptr.kp[i]  
                     self.msg.motor_cmd[i].kd = mc_tmp_ptr.kd[i]  
                 self.pre_communication()
-                self.lowcmd_publisher.msg = self.msg
-                self.lowcmd_publisher.write()
+                self.lowcmd_publisher.Write(self.msg)
             time.sleep(0.002)
                   
     def Control(self):
@@ -238,8 +251,9 @@ class H1ArmController:
 
     def SubscribeState(self):
         while True:
-            if self.lowstate_subscriber.msg:
-                self.LowStateHandler(self.lowstate_subscriber.msg)
+            msg = self.lowstate_subscriber.Read()
+            if msg:
+                self.LowStateHandler(msg)
             time.sleep(0.002)
 
     def RecordMotorState(self, msg):

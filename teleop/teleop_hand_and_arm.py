@@ -1,3 +1,5 @@
+from unitree_sdk2py.core.channel import ChannelFactoryInitialize
+
 import numpy as np
 
 from TeleVision import OpenTeleVision
@@ -115,6 +117,7 @@ class VuerTeleop:
 
 
 if __name__ == '__main__':
+    ChannelFactoryInitialize(0, network_interface)
     manager = Manager()
     image_queue = manager.Queue()
     teleoperator = VuerTeleop('inspire_hand.yml')
