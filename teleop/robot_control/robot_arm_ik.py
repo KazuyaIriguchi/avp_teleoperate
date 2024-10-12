@@ -1,11 +1,11 @@
-import casadi                                                                       
+import casadi
 import meshcat.geometry as mg
 import numpy as np
-import pinocchio as pin                             
+import pinocchio as pin
 import time
-from pinocchio import casadi as cpin                
-from pinocchio.robot_wrapper import RobotWrapper    
-from pinocchio.visualize import MeshcatVisualizer   
+from pinocchio import casadi as cpin
+from pinocchio.robot_wrapper import RobotWrapper
+from pinocchio.visualize import MeshcatVisualizer
 import os
 import sys
 
@@ -52,7 +52,7 @@ class Arm_IK:
                                         # "left_hand_joint",
                                         # "right_hand_joint"
                                       ]
-   
+
         self.reduced_robot = self.robot.buildReducedRobot(
             list_of_joints_to_lock=self.mixed_jointsToLockIDs,
             reference_configuration=np.array([0.0] * self.robot.model.nq),
@@ -69,7 +69,7 @@ class Arm_IK:
                               np.array([0.2605 + 0.05,0,0]).T),
                       pin.FrameType.OP_FRAME)
         )
-        
+
         self.reduced_robot.model.addFrame(
             pin.Frame('R_ee',
                       self.reduced_robot.model.getJointId('right_elbow_joint'),
@@ -77,22 +77,22 @@ class Arm_IK:
                               np.array([0.2605 + 0.05,0,0]).T),
                       pin.FrameType.OP_FRAME)
         )
-        
+
 
         self.init_data = np.zeros(self.reduced_robot.model.nq)
 
         # Initialize the Meshcat visualizer
         self.vis = MeshcatVisualizer(self.reduced_robot.model, self.reduced_robot.collision_model, self.reduced_robot.visual_model)
-        self.vis.initViewer(open=True) 
-        self.vis.loadViewerModel("pinocchio") 
+        self.vis.initViewer(open=True)
+        self.vis.loadViewerModel("pinocchio")
         self.vis.displayFrames(True, frame_ids=[35, 75, 105, 106], axis_length = 0.15, axis_width = 5)
         self.vis.display(pin.neutral(self.reduced_robot.model))
-        
+
         #for i in range(self.reduced_robot.model.nframes):
         #    frame = self.reduced_robot.model.frames[i]
         #    frame_id = self.reduced_robot.model.getFrameId(frame.name)
         #    print(f"Frame ID: {frame_id}, Name: {frame.name}")
-            
+
         # Enable the display of end effector target frames with short axis lengths and greater width.
         frame_viz_names = ['L_ee_target', 'R_ee_target']
         FRAME_AXIS_POSITIONS = (
@@ -126,7 +126,7 @@ class Arm_IK:
         self.cdata = self.cmodel.createData()
 
         # Creating symbolic variables
-        self.cq = casadi.SX.sym("q", self.reduced_robot.model.nq, 1) 
+        self.cq = casadi.SX.sym("q", self.reduced_robot.model.nq, 1)
         self.cTf_l = casadi.SX.sym("tf_l", 4, 4)
         self.cTf_r = casadi.SX.sym("tf_r", 4, 4)
         cpin.framesForwardKinematics(self.cmodel, self.cdata, self.cq)
@@ -215,7 +215,7 @@ class Arm_IK:
             tau_ff = pin.rnea(self.reduced_robot.model, self.reduced_robot.data, sol_q,v,np.zeros(self.reduced_robot.model.nv))
 
             return sol_q, tau_ff ,True
-        
+
         except Exception as e:
             print(f"ERROR in convergence, plotting debug info.{e}")
             # sol_q = self.opti.debug.value(self.var_q)   # return original value

@@ -19,11 +19,11 @@ kNumMotors = 20
 
 class MotorCommand:
     def __init__(self):
-        self.q_ref = np.zeros(kNumMotors)  
-        self.dq_ref = np.zeros(kNumMotors)  
-        self.tau_ff = np.zeros(kNumMotors)  
-        self.kp = np.zeros(kNumMotors)  
-        self.kd = np.zeros(kNumMotors)  
+        self.q_ref = np.zeros(kNumMotors)
+        self.dq_ref = np.zeros(kNumMotors)
+        self.tau_ff = np.zeros(kNumMotors)
+        self.kp = np.zeros(kNumMotors)
+        self.kd = np.zeros(kNumMotors)
 
 class MotorState:
     def __init__(self):
@@ -97,7 +97,7 @@ class H1ArmController:
             else:
                 break
             time.sleep(0.01)
-        
+
         for id in JointIndex:
             msg = self.lowstate_subscriber.Read()
             if msg:
@@ -149,7 +149,7 @@ class H1ArmController:
             calcData.append(d)
 
         return calcData
-    
+
     def __Crc32(self, data):
         bit = 0
         crc = 0xFFFFFFFF
@@ -170,9 +170,9 @@ class H1ArmController:
                     crc ^= polynomial
 
                 bit >>= 1
-        
+
         return crc
-    
+
     def pre_communication(self):
         self.__pack_crc()
 
@@ -204,26 +204,26 @@ class H1ArmController:
             mc_tmp_ptr = self.motor_command_buffer.GetData()
             if mc_tmp_ptr:
                 for i in JointArmIndex:
-                    self.msg.motor_cmd[i].tau = mc_tmp_ptr.tau_ff[i]  
-                    self.msg.motor_cmd[i].q = mc_tmp_ptr.q_ref[i]  
-                    self.msg.motor_cmd[i].dq = mc_tmp_ptr.dq_ref[i]  
-                    self.msg.motor_cmd[i].kp = mc_tmp_ptr.kp[i]  
-                    self.msg.motor_cmd[i].kd = mc_tmp_ptr.kd[i]  
+                    self.msg.motor_cmd[i].tau = mc_tmp_ptr.tau_ff[i]
+                    self.msg.motor_cmd[i].q = mc_tmp_ptr.q_ref[i]
+                    self.msg.motor_cmd[i].dq = mc_tmp_ptr.dq_ref[i]
+                    self.msg.motor_cmd[i].kp = mc_tmp_ptr.kp[i]
+                    self.msg.motor_cmd[i].kd = mc_tmp_ptr.kd[i]
                 self.pre_communication()
                 self.lowcmd_publisher.Write(self.msg)
             time.sleep(0.002)
-                  
+
     def Control(self):
         while True:
-            ms_tmp_ptr = self.motor_state_buffer.GetData()  
-            if ms_tmp_ptr: 
+            ms_tmp_ptr = self.motor_state_buffer.GetData()
+            if ms_tmp_ptr:
                 tem_q_desList = copy.deepcopy(self.q_desList)
                 tem_q_tau_ff = copy.deepcopy(self.q_tau_ff)
-                motor_command_tmp = MotorCommand()  
-                self.time += self.control_dt  
-                self.time = min(max(self.time, 0.0), self.init_duration)  
-                self.ratio = self.time / self.init_duration  
-                for i in range(kNumMotors):  
+                motor_command_tmp = MotorCommand()
+                self.time += self.control_dt
+                self.time = min(max(self.time, 0.0), self.init_duration)
+                self.ratio = self.time / self.init_duration
+                for i in range(kNumMotors):
                     if self.IsWeakMotor(i):
                         motor_command_tmp.kp[i] = self.kp_low
                         motor_command_tmp.kd[i] = self.kd_low
@@ -286,7 +286,7 @@ class H1ArmController:
             JointIndex.kRightElbow,
         ]
         return motor_index in weak_motors
-    
+
     # def IsWristMotor(self, motor_index):
     #     wrist_motors = [
     #         JointIndex.kLeftElbowRoll,
@@ -340,4 +340,3 @@ class JointIndex(IntEnum):
     kLeftShoulderRoll = 17
     kLeftShoulderYaw = 18
     kLeftElbow = 19
-

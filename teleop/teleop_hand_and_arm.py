@@ -18,7 +18,7 @@ import zmq
 import pickle
 import zlib
 
-import os 
+import os
 import sys
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -33,7 +33,7 @@ def image_receiver(image_queue, resolution, crop_size_w, crop_size_h):
     context = zmq.Context()
     socket = context.socket(zmq.PULL)
     socket.connect("tcp://192.168.123.162:5555")
-    
+
     while True:
         compressed_data = b''
         while True:
@@ -101,7 +101,7 @@ class VuerTeleop:
         right_retargeting_config = RetargetingConfig.from_dict(cfg['right'])
         self.left_retargeting = left_retargeting_config.build()
         self.right_retargeting = right_retargeting_config.build()
-    
+
     def step(self):
         head_mat, left_wrist_mat, right_wrist_mat, left_hand_mat, right_hand_mat = self.processor.process(self.tv)
         head_rmat = head_mat[:3, :3]
@@ -133,13 +133,13 @@ if __name__ == '__main__':
     sm = SharedMemoryImage((480,640))
     image_process = Process(target=image_receiver, args=(sm, teleoperator.resolution, teleoperator.crop_size_w, teleoperator.crop_size_h))
     image_process.start()
-            
+
     try:
         user_input = input("Please enter the start signal (enter 's' to start the subsequent program):")
         if user_input.lower() == 's':
             while True:
                 armstate = None
-                armv = None 
+                armv = None
                 frame = sm.read_image()
                 np.copyto(teleoperator.img_array, np.array(frame))
                 handstate = h1hand.get_hand_state()
@@ -150,7 +150,7 @@ if __name__ == '__main__':
 
                 head_rmat, left_pose, right_pose, left_qpos, right_qpos = teleoperator.step()
                 sol_q ,tau_ff, flag = arm_ik.ik_fun(left_pose, right_pose, armstate, armv)
-                
+
                 if flag:
                     q_poseList[12:20] = sol_q
                     q_tau_ff[12:20] = tau_ff
