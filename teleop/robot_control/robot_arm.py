@@ -233,19 +233,20 @@ class H1ArmController:
                     else:
                         motor_command_tmp.kp[i] = self.kp_high
                         motor_command_tmp.kd[i] = self.kd_high
-                    motor_command_tmp.dq_ref[i] = 0.0  
-                    motor_command_tmp.tau_ff[i] = tem_q_tau_ff[i]  
+                    motor_command_tmp.dq_ref[i] = 0.0
+                    motor_command_tmp.tau_ff[i] = tem_q_tau_ff[i]
                     q_des = tem_q_desList[i]
-                    
+
                     q_des = (q_des - ms_tmp_ptr.q[i]) * self.ratio + ms_tmp_ptr.q[i]
-                    motor_command_tmp.q_ref[i] = q_des 
-                self.motor_command_buffer.SetData(motor_command_tmp)  
+                    motor_command_tmp.q_ref[i] = q_des
+                self.motor_command_buffer.SetData(motor_command_tmp)
             time.sleep(0.002)
-            
+
     def GetMotorState(self):
         ms_tmp_ptr = self.motor_state_buffer.GetData()
         if ms_tmp_ptr:
-            return ms_tmp_ptr.q[13:27],ms_tmp_ptr.dq[13:27]
+            # @NOTE H1の軸数(20)に合わせて修正
+            return ms_tmp_ptr.q[12:20],ms_tmp_ptr.dq[12:20]
         else:
             return None,None
 

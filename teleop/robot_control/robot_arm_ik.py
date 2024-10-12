@@ -18,9 +18,10 @@ class Arm_IK:
         np.set_printoptions(precision=5, suppress=True, linewidth=200)
 
         # self.robot = pin.RobotWrapper.BuildFromURDF('../assets/h1_description/urdf/h1_with_hand.urdf', '../assets/h1_description/urdf')
-        self.robot = pin.RobotWrapper.BuildFromURDF('../../assets/h1_description/urdf/h1_with_hand.urdf', '../../assets/h1_description/') # for test
+        # self.robot = pin.RobotWrapper.BuildFromURDF('../../assets/h1_description/urdf/h1_with_hand.urdf', '../../assets/h1_description/') # for test
+        self.robot = pin.RobotWrapper.BuildFromURDF('../assets/h1_description/urdf/h1.urdf', '../assets/')
 
-        self.mixed_jointsToLockIDs = [  
+        self.mixed_jointsToLockIDs = [
                                         "right_hip_roll_joint",
                                         "right_hip_pitch_joint",
                                         "right_knee_joint",
@@ -34,34 +35,22 @@ class Arm_IK:
                                         "left_ankle_joint",
                                         "right_ankle_joint",
 
-                                        "L_index_proximal_joint",
-                                        "L_index_intermediate_joint",
-                                        "L_middle_proximal_joint",
-                                        "L_middle_intermediate_joint",
-                                        "L_ring_proximal_joint",
-                                        "L_ring_intermediate_joint",
-                                        "L_pinky_proximal_joint",
-                                        "L_pinky_intermediate_joint",
-                                        "L_thumb_proximal_yaw_joint",
-                                        "L_thumb_proximal_pitch_joint",
-                                        "L_thumb_intermediate_joint",
-                                        "L_thumb_distal_joint",
-                                        
-                                        "R_index_proximal_joint",
-                                        "R_index_intermediate_joint",
-                                        "R_middle_proximal_joint",
-                                        "R_middle_intermediate_joint",
-                                        "R_ring_proximal_joint",
-                                        "R_ring_intermediate_joint",
-                                        "R_pinky_proximal_joint",
-                                        "R_pinky_intermediate_joint",
-                                        "R_thumb_proximal_yaw_joint",
-                                        "R_thumb_proximal_pitch_joint",
-                                        "R_thumb_intermediate_joint",
-                                        "R_thumb_distal_joint",
+                                        # @NOTE 以下はwith_handの場合に使用
+                                        # "R_index_proximal_joint",
+                                        # "R_index_intermediate_joint",
+                                        # "R_middle_proximal_joint",
+                                        # "R_middle_intermediate_joint",
+                                        # "R_ring_proximal_joint",
+                                        # "R_ring_intermediate_joint",
+                                        # "R_pinky_proximal_joint",
+                                        # "R_pinky_intermediate_joint",
+                                        # "R_thumb_proximal_yaw_joint",
+                                        # "R_thumb_proximal_pitch_joint",
+                                        # "R_thumb_intermediate_joint",
+                                        # "R_thumb_distal_joint",
 
-                                        "left_hand_joint",
-                                        "right_hand_joint"    
+                                        # "left_hand_joint",
+                                        # "right_hand_joint"
                                       ]
    
         self.reduced_robot = self.robot.buildReducedRobot(
