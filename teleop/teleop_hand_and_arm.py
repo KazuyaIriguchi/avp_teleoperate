@@ -1,3 +1,4 @@
+import argparse
 from unitree_sdk2py.core.channel import ChannelFactoryInitialize
 
 import numpy as np
@@ -117,6 +118,11 @@ class VuerTeleop:
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--network-interface", type=str, default="")
+    args = parser.parse_args()
+    network_interface = args.network_interface
+
     ChannelFactoryInitialize(0, network_interface)
     manager = Manager()
     image_queue = manager.Queue()
